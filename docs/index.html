@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icarus Mount Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="hero-head">
+          <div class="hero-heading">
+            <p class="eyebrow">Icarus Tame Manager</p>
+            <h1>Tame Manager</h1>
+          </div>
+          <div class="hero-toolbar">
+            <div class="button-row">
+              <label class="button primary file-button">
+                <input id="file-input" type="file" accept=".json,application/json">
+                Import Mounts.json
+              </label>
+              <button id="export-csv-button" class="button secondary" type="button" disabled>Export CSV</button>
+              <button id="export-button" class="button secondary" type="button" disabled>Export JSON</button>
+            </div>
+            <p id="status-message" class="status-message">Waiting for data.</p>
+          </div>
+        </div>
+        <p class="hero-text">
+          Import your <code>Mounts.json</code>, organize your stable, rename tames, compare breeding lines,
+          and reorder orbital call-down slots without touching the game client itself.
+        </p>
+        <div class="hero-callouts">
+          <div class="hero-card path-card">
+            <p class="hero-label">Find Your Mounts.json</p>
+            <code>C:\Users\{Username}\AppData\Local\Icarus\Saved\PlayerData\{SteamID}\Mounts.json</code>
+          </div>
+          <div class="hero-card notice-card">
+            <p class="hero-label">Design Intent</p>
+            <p class="muted">
+              This tool is designed to help track, sort, and organize tames. It is not intended to edit stats or
+              create impossible animals.
+            </p>
+          </div>
+        </div>
+        <p class="hero-disclaimer">
+          Use at your own risk. This tool edits the game save file <code>Mounts.json</code> and is not affiliated with
+          RocketWerkz or the Icarus development team.
+        </p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="panel">
+          <h2>Filters</h2>
+          <label class="field">
+            <span>Search</span>
+            <input id="search-input" type="search" placeholder="Name or type">
+          </label>
+          <label class="field">
+            <span>Mount Type</span>
+            <select id="type-filter">
+              <option value="">All types</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sex</span>
+            <select id="sex-filter">
+              <option value="">All sexes</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Bloodline</span>
+            <select id="bloodline-filter">
+              <option value="">All bloodlines</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Phenotype</span>
+            <select id="phenotype-filter">
+              <option value="">All phenotypes</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sort By</span>
+            <select id="sort-select">
+              <option value="position">Spawn order</option>
+              <option value="name">Name</option>
+              <option value="type">Type</option>
+              <option value="bloodline">Bloodline</option>
+              <option value="phenotype">Phenotype</option>
+              <option value="genetics-desc">Genetics total (high to low)</option>
+              <option value="level-desc">Level (high to low)</option>
+              <option value="level-asc">Level (low to high)</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2>Stable Snapshot</h2>
+          <div id="summary-cards" class="summary-cards"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Breeding Stats</h2>
+          <p class="muted">
+            Decoded from the mount blob:
+            <strong>Vigor, Fitness, Physique, Reflex, Toughness, Adaptation, Instinct</strong>.
+          </p>
+          <p class="muted">
+            Each stat runs from <strong>0-10</strong>, with <strong>60</strong> representing a maxed mount profile.
+          </p>
+        </section>
+      </aside>
+
+      <section class="content">
+        <div class="view-switcher">
+          <button id="roster-view-button" class="button secondary is-active" type="button">Roster</button>
+          <button id="breeding-view-button" class="button secondary" type="button">Breeding</button>
+          <button id="orbital-view-button" class="button secondary" type="button">Orbital Order</button>
+        </div>
+
+        <section id="breeding-guide" class="panel guide-panel">
+          <h2>Breeding Guide</h2>
+          <p class="muted">
+            We can reliably surface parent stats, sex, phenotype, bloodline, and orbital order. We cannot predict exact babies yet,
+            but we can make strong pairing decisions by comparing totals, weak stats, and matching phenotype or bloodline goals.
+          </p>
+          <p class="muted">
+            Suggested naming pattern for in-game pairing:
+            <code>F:P7:V0:F10:P10:R10:T10:A10:I10:Alpha</code>
+          </p>
+        </section>
+
+        <section id="pairing-panel" class="panel guide-panel">
+          <div class="pairing-header">
+            <div>
+              <h2>Pairing Suggestions</h2>
+              <p class="muted">
+                Suggestions are based on same-species, opposite-sex pairs, shared phenotype or bloodline goals, and complementary stats.
+              </p>
+            </div>
+            <label class="field pairing-field">
+              <span>Pair For Type</span>
+              <select id="pairing-type-filter">
+                <option value="">Use current type filter</option>
+              </select>
+            </label>
+          </div>
+          <div id="pairing-list" class="pairing-list"></div>
+        </section>
+
+        <div class="content-header">
+          <div>
+            <h2 id="content-title">Breeding Roster</h2>
+            <p id="results-message" class="muted">No mounts loaded yet.</p>
+          </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <h3>Bring in your stable</h3>
+          <p>Import your <code>Mounts.json</code> to start organizing your tames, breeding lines, and orbital order.</p>
+        </div>
+
+        <div id="mount-list" class="mount-list" aria-live="polite"></div>
+        <div id="orbital-list" class="orbital-list" hidden aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <template id="mount-card-template">
+    <article class="mount-card">
+      <div class="mount-card-main">
+        <div class="mount-card-top">
+          <div>
+            <p class="position-badge"></p>
+            <h3 class="mount-title"></h3>
+          </div>
+        </div>
+
+        <label class="field compact">
+          <span>Mount Name</span>
+          <input class="name-input" type="text" maxlength="30">
+        </label>
+
+        <div class="pill-row">
+          <span class="pill type-pill"></span>
+          <span class="pill level-pill"></span>
+          <span class="pill sex-pill"></span>
+          <span class="pill phenotype-pill"></span>
+          <span class="pill bloodline-pill"></span>
+          <span class="pill genetics-pill"></span>
+        </div>
+
+        <div class="bloodline-bonus-pill"></div>
+
+        <div class="details-panel">
+          <details class="info-section">
+            <summary>Details</summary>
+            <div class="breeding-placeholder">
+              <h4>Breeding Stats</h4>
+              <div class="breeding-grid"></div>
+            </div>
+            <div class="additional-info">
+              <h4>Additional Info</h4>
+              <div class="detail-grid"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="mount-actions">
+        <button class="button danger delete-button" type="button">Delete</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="orbital-row-template">
+    <article class="orbital-row">
+      <button class="orbital-handle" type="button" draggable="true" aria-label="Drag to reorder">::</button>
+      <div class="orbital-copy">
+        <div class="orbital-mainline">
+          <div class="orbital-heading">
+            <p class="position-badge orbital-slot"></p>
+            <h3 class="orbital-title"></h3>
+          </div>
+          <div class="pill-row orbital-pills">
+            <span class="pill orbital-type"></span>
+            <span class="pill orbital-level"></span>
+            <span class="pill orbital-sex"></span>
+            <span class="pill orbital-pheno"></span>
+            <span class="pill orbital-bloodline"></span>
+            <span class="pill orbital-total"></span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <template id="pairing-card-template">
+    <article class="pairing-card">
+      <div class="pairing-top">
+        <div>
+          <p class="position-badge pairing-rank"></p>
+        </div>
+      </div>
+      <p class="muted pairing-summary"></p>
+      <div class="pairing-grid">
+        <div class="pairing-mount pairing-female">
+          <h4>Female</h4>
+          <p class="pairing-mount-name"></p>
+          <div class="pill-row pairing-mount-pills"></div>
+          <label class="field compact">
+            <span>Suggested Name</span>
+            <input class="pairing-name-input" type="text" maxlength="30">
+          </label>
+          <div class="pairing-name-actions">
+            <button class="button ghost pairing-apply-button" type="button">Apply Name</button>
+            <button class="button ghost pairing-reset-button" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="pairing-mount pairing-male">
+          <h4>Male</h4>
+          <p class="pairing-mount-name"></p>
+          <div class="pill-row pairing-mount-pills"></div>
+          <label class="field compact">
+            <span>Suggested Name</span>
+            <input class="pairing-name-input" type="text" maxlength="30">
+          </label>
+          <div class="pairing-name-actions">
+            <button class="button ghost pairing-apply-button" type="button">Apply Name</button>
+            <button class="button ghost pairing-reset-button" type="button">Reset</button>
+          </div>
+        </div>
+      </div>
+      <div class="pairing-notes"></div>
+    </article>
+  </template>
+
+  <script src="decoder.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
